@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf, process::Command};
+use std::{env, fs, path::PathBuf, process::Command};
 
 fn main() {
     println!("cargo-rerun-if-changed=build.rs");
@@ -26,10 +26,18 @@ fn main() {
         .arg("--all-features")
         .arg("--workspace")
         .arg("-o")
-        .arg(licenses_dir)
+        .arg(&licenses_dir)
         .arg(template_file)
         .spawn()
         .ok()
         .and_then(|mut e| e.wait().ok())
         .expect("Failed to generate license summary");
+
+    if !licenses_dir.exists() {
+        fs::write(
+            licenses_dir,
+            "Failed to generate a licenses file! This is a problem! Please report to the devs!",
+        )
+        .unwrap();
+    }
 }

@@ -104,7 +104,7 @@ fn get_logger() -> &'static SimpleLogger {
 }
 
 pub fn init() -> Result<(), SetLoggerError> {
-    log::set_logger(get_logger()).map(|()| log::set_max_level(LevelFilter::Trace))
+    log::set_logger(get_logger()).map(|()| log::set_max_level(LevelFilter::Info))
 }
 
 pub fn flush() {

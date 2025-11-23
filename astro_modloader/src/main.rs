@@ -1,7 +1,7 @@
 // Don't show console window in release builds
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::cell::RefCell;
+use std::{cell::RefCell, cmp::Ordering};
 use std::collections::BTreeMap;
 use std::path::Path;
 
@@ -19,7 +19,6 @@ use unreal_mod_manager::{
     config::{GameConfig, IconData, InstallManager},
     error::ModLoaderError,
     game_platform_managers::GetGameBuildTrait,
-    unreal_cpp_bootstrapper::config::{FunctionInfo, FunctionInfoPatterns},
     update_info::UpdateInfo,
     version::GameBuild,
 };
@@ -114,16 +113,47 @@ lazy_static! {
     static ref RGB_DATA: IconData = load_icon();
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+struct SimpleTag {
+    pub major: i32,
+    pub minor: i32,
+    pub patch: i32,
+}
+
+impl SimpleTag {
+    pub fn from_str(data: &str) -> Option<SimpleTag> {
+        let mut ver = data
+            .trim_start_matches(|ch: char| !ch.is_numeric())
+            .trim_end_matches(|ch: char| !ch.is_numeric())
+            .split('.')
+            .map(str::parse)
+            .filter_map(Result::ok);
+
+        Some(SimpleTag {
+            major: ver.next()?,
+            minor: ver.next()?,
+            patch: ver.next()?,
+        })
+    }
+
+    pub fn simple_compare(a: &str, b: &str) -> Ordering {
+        let a_version = SimpleTag::from_str(a);
+        let b_version = SimpleTag::from_str(b);
+
+        match (a_version, b_version) {
+            (Some(a_version), Some(b_version)) => a_version.cmp(&b_version),
+            _ => Ordering::Equal,
+        }
+    }
+}
+
 impl AstroGameConfig {
     fn get_api(&self) -> GithubApi {
-        let mut api = GithubApi::new("AstroTechies", "astro_modloader");
-        api.current_version(cargo_crate_version!());
-        api.prerelease(true);
-        api
+        GithubApi::new("AstroTechies", "astro_modloader").current_version(cargo_crate_version!()).prerelease(true)
     }
 
     fn get_newer_release(&self, api: &GithubApi) -> Result<Option<GithubRelease>, ModLoaderError> {
-        api.get_newer(&None)
+        api.get_newer(Some(&SimpleTag::simple_compare))
             .map_err(|e| ModLoaderError::other(e.to_string()))
     }
 }
@@ -228,11 +258,13 @@ where
         GameSettings {
             is_using_fchunked_fixed_uobject_array: true,
             uses_fname_pool: true,
-            function_info_settings: Some(FunctionInfo::Patterns(FunctionInfoPatterns {
-                call_function_by_name_with_arguments: Some("41 57 41 56 41 55 41 54 56 57 55 53 48 81 EC ? ? ? ? 44 0F 29 BC 24 ? ? ? ? 44 0F 29 B4 24 ? ? ? ? 44 0F 29 AC 24 ? ? ? ? 44 0F 29 A4 24 ? ? ? ? 44 0F 29 9C 24 ? ? ? ? 44 0F 29 94 24 ? ? ? ? 44 0F 29 8C 24 ? ? ? ? 44 0F 29 84 24 ? ? ? ? 0F 29 BC 24 ? ? ? ? 0F 29 B4 24 ? ? ? ? 48 8B 8C 24 ? ? ? ? 48 8B 94 24 ? ? ? ? 48 8B 84 24 ? ? ? ? 4C 8B 40 18 0F 28 3D".to_string()),
-                create_default_object: Some("48 8B C4 55 41 54 41 55 41 56 41 57 48 8D A8 ? ? ? ? 48 81 EC ? ? ? ? 48 C7 45 ? ? ? ? ? 48 89 58 10 48 89 70 18 48 89 78 20 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 48 8B F9 48 83 B9 ? ? ? ? ? 0F 85 ? ? ? ? 48 8B 59 40 45 33 FF 48 85 DB 74 2E B2 01 48 8B CB".to_string()),
-                ..Default::default()
-            })),
+            function_info_settings: None,
+            // No longer necessary on 4.27
+            // function_info_settings: Some(FunctionInfo::Patterns(FunctionInfoPatterns {
+            //     call_function_by_name_with_arguments: Some("41 57 41 56 41 55 41 54 56 57 55 53 48 81 EC ? ? ? ? 44 0F 29 BC 24 ? ? ? ? 44 0F 29 B4 24 ? ? ? ? 44 0F 29 AC 24 ? ? ? ? 44 0F 29 A4 24 ? ? ? ? 44 0F 29 9C 24 ? ? ? ? 44 0F 29 94 24 ? ? ? ? 44 0F 29 8C 24 ? ? ? ? 44 0F 29 84 24 ? ? ? ? 0F 29 BC 24 ? ? ? ? 0F 29 B4 24 ? ? ? ? 48 8B 8C 24 ? ? ? ? 48 8B 94 24 ? ? ? ? 48 8B 84 24 ? ? ? ? 4C 8B 40 18 0F 28 3D".to_string()),
+            //     create_default_object: Some("48 8B C4 55 41 54 41 55 41 56 41 57 48 8D A8 ? ? ? ? 48 81 EC ? ? ? ? 48 C7 45 ? ? ? ? ? 48 89 58 10 48 89 70 18 48 89 78 20 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 48 8B F9 48 83 B9 ? ? ? ? ? 0F 85 ? ? ? ? 48 8B 59 40 45 33 FF 48 85 DB 74 2E B2 01 48 8B CB".to_string()),
+            //     ..Default::default()
+            // })),
             ..Default::default()
         }
     }
