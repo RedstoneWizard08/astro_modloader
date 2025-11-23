@@ -17,11 +17,11 @@ use unreal_mod_manager::unreal_asset::{
     Import,
 };
 use unreal_mod_manager::unreal_helpers::Guid;
+use unreal_mod_manager::unreal_mod_integrator::wrappers::{PakMemory, WPakReader};
 use unreal_mod_manager::unreal_mod_integrator::{
     helpers::{get_asset, write_asset},
     Error,
 };
-use unreal_mod_manager::unreal_pak::{PakMemory, PakReader};
 
 use super::MAP_PATHS;
 
@@ -44,8 +44,8 @@ struct PlacementModifier {
 pub(crate) fn handle_biome_placement_modifiers(
     _data: &(),
     integrated_pak: &mut PakMemory,
-    game_paks: &mut Vec<PakReader<BufReader<File>>>,
-    mod_paks: &mut Vec<PakReader<BufReader<File>>>,
+    game_paks: &mut Vec<WPakReader<BufReader<File>>>,
+    mod_paks: &mut Vec<WPakReader<BufReader<File>>>,
     placement_modifiers: &Vec<serde_json::Value>,
 ) -> Result<(), Error> {
     let mut biome_placement_modifiers = Vec::new();
@@ -66,7 +66,7 @@ pub(crate) fn handle_biome_placement_modifiers(
             game_paks,
             mod_paks,
             &map_path.to_string(),
-            EngineVersion::VER_UE4_23,
+            EngineVersion::VER_UE4_27,
         )?;
 
         let mut voxel_exports = HashMap::new();

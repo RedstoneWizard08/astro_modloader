@@ -6,6 +6,7 @@ use std::path::Path;
 use unreal_mod_manager::unreal_asset::reader::archive_trait::ArchiveTrait;
 use unreal_mod_manager::unreal_asset::types::PackageIndexTrait;
 use unreal_mod_manager::unreal_asset::unversioned::ancestry::Ancestry;
+use unreal_mod_manager::unreal_mod_integrator::wrappers::{PakMemory, WPakReader};
 use uuid::Uuid;
 
 use unreal_mod_manager::unreal_asset::{
@@ -26,7 +27,6 @@ use unreal_mod_manager::unreal_mod_integrator::{
     helpers::{get_asset, write_asset},
     Error, IntegratorConfig,
 };
-use unreal_mod_manager::unreal_pak::{PakMemory, PakReader};
 
 use crate::assets::{ACTOR_TEMPLATE_ASSET, ACTOR_TEMPLATE_EXPORT};
 use crate::AstroIntegratorConfig;
@@ -35,14 +35,14 @@ use crate::AstroIntegratorConfig;
 pub(crate) fn handle_linked_actor_components(
     _data: &(),
     integrated_pak: &mut PakMemory,
-    game_paks: &mut Vec<PakReader<BufReader<File>>>,
-    mod_paks: &mut Vec<PakReader<BufReader<File>>>,
+    game_paks: &mut Vec<WPakReader<BufReader<File>>>,
+    mod_paks: &mut Vec<WPakReader<BufReader<File>>>,
     linked_actors_maps: &Vec<serde_json::Value>,
 ) -> Result<(), Error> {
     let actor_asset = Asset::new(
         Cursor::new(ACTOR_TEMPLATE_ASSET.to_vec()),
         Some(Cursor::new(ACTOR_TEMPLATE_EXPORT.to_vec())),
-        EngineVersion::VER_UE4_23,
+        EngineVersion::VER_UE4_27,
         None,
     )
     .map_err(|e| io::Error::new(ErrorKind::Other, e.to_string()))?;
@@ -83,7 +83,7 @@ pub(crate) fn handle_linked_actor_components(
             game_paks,
             mod_paks,
             &name,
-            EngineVersion::VER_UE4_23,
+            EngineVersion::VER_UE4_27,
         )?;
 
         for component_path_raw in components {
@@ -124,23 +124,23 @@ pub(crate) fn handle_linked_actor_components(
 
             let script_core_uobject = asset.add_fname("/Script/CoreUObject");
             let name_class = asset.add_fname("Class");
-            let object_property = asset.add_fname("ObjectProperty");
-            let default_object_property = asset.add_fname("Default__ObjectProperty");
+            // let object_property = asset.add_fname("ObjectProperty");
+            // let default_object_property = asset.add_fname("Default__ObjectProperty");
             let name_scs_node = asset.add_fname("SCS_Node");
             let script_engine = asset.add_fname("/Script/Engine");
             let default_scs_node = asset.add_fname("Default__SCS_Node");
 
-            let class_object_property_import = asset
-                .find_import_no_index(&script_core_uobject, &name_class, &object_property)
-                .expect("No class object property import");
+            // let class_object_property_import = asset
+            //     .find_import_no_index(&script_core_uobject, &name_class, &object_property)
+            //     .expect("No class object property import");
 
-            let default_object_property_import = asset
-                .find_import_no_index(
-                    &script_core_uobject,
-                    &object_property,
-                    &default_object_property,
-                )
-                .expect("No default objectproperty");
+            // let default_object_property_import = asset
+            //     .find_import_no_index(
+            //         &script_core_uobject,
+            //         &object_property,
+            //         &default_object_property,
+            //     )
+            //     .expect("No default objectproperty");
 
             let scs_node_import = asset
                 .find_import_no_index(&script_core_uobject, &name_class, &name_scs_node)
@@ -199,18 +199,18 @@ pub(crate) fn handle_linked_actor_components(
                     .ok_or_else(|| io::Error::new(ErrorKind::Other, "Corrupted starter pak"))?;
             component_object_property.property_class = blueprint_generated_class_import;
 
-            let component_base_export = component_export.get_base_export_mut();
-            component_base_export.object_name = asset.add_fname(component);
-            component_base_export.create_before_serialization_dependencies =
-                Vec::from([blueprint_generated_class_import]);
-            component_base_export.create_before_create_dependencies =
-                Vec::from([PackageIndex::new(actor)]);
-            component_base_export.outer_index = PackageIndex::new(actor);
-            component_base_export.class_index = PackageIndex::new(class_object_property_import);
-            component_base_export.template_index =
-                PackageIndex::new(default_object_property_import);
+            // let component_base_export = component_export.get_base_export_mut();
+            // component_base_export.object_name = asset.add_fname(component);
+            // component_base_export.create_before_serialization_dependencies =
+            //     Vec::from([blueprint_generated_class_import]);
+            // component_base_export.create_before_create_dependencies =
+            //     Vec::from([PackageIndex::new(actor)]);
+            // component_base_export.outer_index = PackageIndex::new(actor);
+            // component_base_export.class_index = PackageIndex::new(class_object_property_import);
+            // component_base_export.template_index =
+            //     PackageIndex::new(default_object_property_import);
 
-            asset.asset_data.exports.push(component_export.into());
+            // asset.asset_data.exports.push(component_export.into());
 
             let component_export_index = asset.asset_data.exports.len() as i32;
             let actor_export = cast!(

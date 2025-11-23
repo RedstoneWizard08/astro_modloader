@@ -18,11 +18,11 @@ use unreal_mod_manager::unreal_asset::{
     Import,
 };
 use unreal_mod_manager::unreal_helpers::game_to_absolute;
+use unreal_mod_manager::unreal_mod_integrator::wrappers::{PakMemory, WPakReader};
 use unreal_mod_manager::unreal_mod_integrator::{
     helpers::{get_asset, write_asset},
     Error, IntegratorConfig,
 };
-use unreal_mod_manager::unreal_pak::{PakMemory, PakReader};
 
 use crate::AstroIntegratorConfig;
 
@@ -30,8 +30,8 @@ use crate::AstroIntegratorConfig;
 pub(crate) fn handle_item_list_entries(
     _data: &(),
     integrated_pak: &mut PakMemory,
-    game_paks: &mut Vec<PakReader<BufReader<File>>>,
-    mod_paks: &mut Vec<PakReader<BufReader<File>>>,
+    game_paks: &mut Vec<WPakReader<BufReader<File>>>,
+    mod_paks: &mut Vec<WPakReader<BufReader<File>>>,
     item_list_entires_maps: &Vec<serde_json::Value>,
 ) -> Result<(), Error> {
     let mut new_items = HashMap::new();
@@ -91,7 +91,7 @@ pub(crate) fn handle_item_list_entries(
             game_paks,
             mod_paks,
             &asset_name,
-            EngineVersion::VER_UE4_23,
+            EngineVersion::VER_UE4_27,
         )?;
 
         let mut item_types_property: HashMap<String, Vec<(usize, usize, String)>> = HashMap::new();

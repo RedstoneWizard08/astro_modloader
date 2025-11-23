@@ -13,11 +13,11 @@ use unreal_mod_manager::unreal_asset::{
     Import,
 };
 use unreal_mod_manager::unreal_helpers::Guid;
+use unreal_mod_manager::unreal_mod_integrator::wrappers::{PakMemory, WPakReader};
 use unreal_mod_manager::unreal_mod_integrator::{
     helpers::{get_asset, write_asset},
     Error,
 };
-use unreal_mod_manager::unreal_pak::{PakMemory, PakReader};
 
 use super::MAP_PATHS;
 
@@ -25,8 +25,8 @@ use super::MAP_PATHS;
 pub(crate) fn handle_mission_trailheads(
     _data: &(),
     integrated_pak: &mut PakMemory,
-    game_paks: &mut Vec<PakReader<BufReader<File>>>,
-    mod_paks: &mut Vec<PakReader<BufReader<File>>>,
+    game_paks: &mut Vec<WPakReader<BufReader<File>>>,
+    mod_paks: &mut Vec<WPakReader<BufReader<File>>>,
     trailhead_arrays: &Vec<serde_json::Value>,
 ) -> Result<(), Error> {
     for map_path in MAP_PATHS {
@@ -35,7 +35,7 @@ pub(crate) fn handle_mission_trailheads(
             game_paks,
             mod_paks,
             &String::from(map_path),
-            EngineVersion::VER_UE4_23,
+            EngineVersion::VER_UE4_27,
         )?;
 
         let mut trailheads = Vec::new();
